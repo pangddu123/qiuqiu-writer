@@ -29,12 +29,18 @@
     "rc-resize-observer": "^1.4.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/node": "^25.2.0",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
     "@types/react-resizable": "^3.0.8",
     "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
     "typescript": "^5.2.2",
+    "typescript-eslint": "^8.46.4",
     "vite": "^5.1.4"
   }
 }

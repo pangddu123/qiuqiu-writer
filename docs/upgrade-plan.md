@@ -117,8 +117,8 @@
 - [ ] backend：跑 `poetry run ruff check --fix`，提交可自动修复的部分；剩余 manual 项分主题逐次清理（typing、命名、import order 等）
 - [ ] backend：跑 `poetry run ruff format`，全仓重排版，作为单次"格式化基线"提交
 - [ ] frontend：处理 45 个 ESLint 报错（`react-hooks/set-state-in-effect`、`react-refresh` 等），每类一个小 PR
-- [ ] admin：补 ESLint 依赖与 `eslint.config.js`（沿用 frontend 配置），首次允许失败后逐步收紧
-- [ ] 上述四项完成后，去掉 `.github/workflows/backend.yml` 与 `.github/workflows/web.yml` 中对应步骤的 `continue-on-error: true` 与 `if: matrix.workspace == 'frontend'`，把 advisory 升为 required
+- [x] admin：补 ESLint 依赖与 `eslint.config.js`（沿用 frontend 配置），首次允许失败后逐步收紧
+- [ ] 上述四项完成后，去掉 `.github/workflows/backend.yml` 与 `.github/workflows/web.yml` 中对应步骤的 `continue-on-error: true`，把 advisory 升为 required
 
 #### P0-3 · 日志脱敏（最紧急的安全洞）
 
@@ -379,3 +379,4 @@ Week 8+:   Phase 4 (按需)
 - **2026-05-07** — v1 草案，待确认包管理器选型后启动 Phase 0
 - **2026-05-08** — P0-1 落地：选定 npm 作为 JS 包管理器（Node ≥ 20，npm ≥ 10）；提交 `frontend/package-lock.json`（805 packages）与 `admin/package-lock.json`（205 packages）；从 `.gitignore` 移除 lockfile 忽略项；`start.sh` / `Makefile` / `deploy.sh` 切换到 `npm ci`；两个 `package.json` 加 `engines` 字段；同步更新 `README.md`、`CLAUDE.md`、`docs/getting-started.md`、`docs/development.md`、`frontend/README.md`。`npm ci` 在两个项目上验证通过（frontend 1m / admin 4s，均 exit 0）。
 - **2026-05-08** — P0-2 落地：新增 `.github/workflows/backend.yml` 与 `.github/workflows/web.yml`，触发器 `pull_request` + `push: [main]`，带 concurrency cancel-in-progress。基于实际状态采用门禁分层：强制门禁（poetry install / npm ci / tsc / build，当前皆绿）+ advisory（ruff check / ruff format / frontend lint，配 `continue-on-error: true`）。pytest 推迟到 P0-5（需 service containers）；admin lint 推迟到 P0-2b（需补 ESLint）。新增 P0-2b 子项跟踪 baseline 清理。
+- **2026-05-09** — P0-2b 第 4 项落地：admin 补 ESLint 9 + flat config（`@eslint/js`、`typescript-eslint`、`eslint-plugin-react-hooks`、`eslint-plugin-react-refresh`、`globals`），`admin/eslint.config.js` 沿用 frontend 配置，额外 ignore `vite.config.js` / `vite.config.d.ts` / `*.tsbuildinfo` 等历史编译产物。本地 `npm ci → npm run lint` 跑出 79 个 lint 报告项（74 errors + 5 warnings，均为业务代码 baseline 问题，不是配置错误）；`tsc --noEmit` + `vite build` 均通过。`web.yml` 的 lint 步骤去掉 `if: matrix.workspace == 'frontend'`，admin 也开始跑 advisory lint。
