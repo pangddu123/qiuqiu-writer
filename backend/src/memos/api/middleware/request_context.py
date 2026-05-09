@@ -12,6 +12,7 @@ from starlette.responses import Response
 
 import memos.log
 
+from memos.api.utils.log_redact import redact_headers
 from memos.context.context import RequestContext, generate_trace_id, set_request_context
 
 
@@ -79,7 +80,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
         logger.info(
             f"Request started, source: {self.source}, method: {request.method}, path: {request.url.path}, "
-            f"headers: {request.headers}"
+            f"headers: {redact_headers(request.headers)}"
         )
 
         response = await call_next(request)

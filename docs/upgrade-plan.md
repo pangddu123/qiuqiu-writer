@@ -126,14 +126,15 @@
 
 **动作清单**：
 
-- [ ] 新建 `backend/src/memos/api/utils/log_redact.py`
-  - 函数 `redact_headers(headers: Mapping, allowlist: set[str]) -> dict`
-  - 默认白名单：`{"x-request-id", "x-trace-id", "x-env", "user-agent", "content-type", "accept"}`
+- [x] 新建 `backend/src/memos/api/utils/log_redact.py`
+  - 函数 `redact_headers(headers: Mapping, allowlist: Iterable[str] | None) -> dict`
+  - 默认白名单：`{"x-request-id", "x-trace-id", "g-trace-id", "trace-id", "x-env", "user-agent", "content-type", "accept"}`（在 plan 基础上加 `g-trace-id` / `trace-id`，与现有 `extract_trace_id_from_headers` 路径对齐）
   - 其余字段值替换为 `"[REDACTED]"`
-- [ ] 修改 `backend/src/memos/api/middleware/request_context.py:80-82`
+  - 名称比较 case-insensitive（避免大小写绕过）
+- [x] 修改 `backend/src/memos/api/middleware/request_context.py:80-83`
   - 把 `f"headers: {request.headers}"` 改成 `f"headers: {redact_headers(request.headers)}"`
-- [ ] 全仓 grep 一遍 `logger.*headers`、`logger.*body`、`print.*headers`，确认没有别处遗漏
-- [ ] 写一个针对 `redact_headers` 的单测
+- [x] 全仓 grep 一遍 `logger.*headers`、`logger.*body`、`print.*headers`，确认没有别处遗漏 —— 仅 `request_context.py:82` 一处明文全量 headers 泄露；其它 `request.headers` 命中都是按字段读取（user-agent / x-forwarded-for 等）
+- [x] 写一个针对 `redact_headers` 的单测（`tests/api/test_log_redact.py`，8 个 case：allowlist 命中 / 大小写不敏感 / 未知 header 遮蔽 / 空 mapping / Starlette `Headers` Mapping 输入 / 自定义 allowlist 覆盖默认 / 自定义 allowlist 自带大小写归一化 / `DEFAULT_HEADER_ALLOWLIST` 全小写不变量）
 
 #### P0-4 · 环境变量强校验
 
@@ -379,3 +380,4 @@ Week 8+:   Phase 4 (按需)
 - **2026-05-07** — v1 草案，待确认包管理器选型后启动 Phase 0
 - **2026-05-08** — P0-1 落地：选定 npm 作为 JS 包管理器（Node ≥ 20，npm ≥ 10）；提交 `frontend/package-lock.json`（805 packages）与 `admin/package-lock.json`（205 packages）；从 `.gitignore` 移除 lockfile 忽略项；`start.sh` / `Makefile` / `deploy.sh` 切换到 `npm ci`；两个 `package.json` 加 `engines` 字段；同步更新 `README.md`、`CLAUDE.md`、`docs/getting-started.md`、`docs/development.md`、`frontend/README.md`。`npm ci` 在两个项目上验证通过（frontend 1m / admin 4s，均 exit 0）。
 - **2026-05-08** — P0-2 落地：新增 `.github/workflows/backend.yml` 与 `.github/workflows/web.yml`，触发器 `pull_request` + `push: [main]`，带 concurrency cancel-in-progress。基于实际状态采用门禁分层：强制门禁（poetry install / npm ci / tsc / build，当前皆绿）+ advisory（ruff check / ruff format / frontend lint，配 `continue-on-error: true`）。pytest 推迟到 P0-5（需 service containers）；admin lint 推迟到 P0-2b（需补 ESLint）。新增 P0-2b 子项跟踪 baseline 清理。
+- **2026-05-09** — P0-3 落地：新建 `backend/src/memos/api/utils/log_redact.py`，函数 `redact_headers(headers, allowlist)` 默认白名单覆盖 trace / env / UA / content-type / accept 等 8 个字段，其余值替换为 `[REDACTED]`，名称匹配 case-insensitive。改 `request_context.py:82`：`f"headers: {request.headers}"` → `f"headers: {redact_headers(request.headers)}"`。全仓 grep 确认仅此一处明文全量 headers 泄露点。新增 `tests/api/test_log_redact.py`（8 个 case，本地以 `importlib` 隔离加载验证全部通过；CI pytest 待 P0-5 启用）。`request_context.py` 内已有 RUF003 中文注释 lint 警告为 pre-existing baseline，归属 P0-2b。
